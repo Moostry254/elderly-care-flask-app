@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elderly Care System - Connect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom theme colors - Peach Palette */
+        :root {
+            --theme-primary: #78350f; /* Dark Brown (amber-900) - Main text, some accents */
+            --theme-primary-dark: #57250a; /* Darkest Brown */
+            --theme-secondary: #a8a29e; /* Neutral Gray/Stone (stone-400) - Borders, sub-headings */
+            --theme-secondary-dark: #78716c; /* Darker Stone (stone-500) */
+            /* Peach Accent */
+            --theme-accent: #fb923c; /* Peach (orange-400) - Buttons, links, highlights */
+            --theme-accent-dark: #f97316; /* Darker Peach (orange-500) */
+            --theme-bg-light: #fffbeb; /* Very Light Beige/Yellow (yellow-100) - Body background */
+            --theme-bg-card: #ffffff; /* White - Card/Section background */
+            --theme-bg-sidebar: #fefce8; /* Slightly different beige for sidebar (yellow-50) */
+            --theme-text-dark: #3f3f46; /* Dark Gray (zinc-700) - Body text */
+            --theme-text-medium: #71717a; /* Medium Gray (zinc-500) - Secondary text */
+            --theme-text-light: #f4f4f5; /* zinc-100 - Text on dark buttons */
+            --theme-text-white: #ffffff;
+            --theme-border: #e7e5e4; /* Light Gray Border (stone-200) */
+            --theme-border-dark: #d6d3d1; /* Darker Gray Border (stone-300) */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--theme-bg-light);
+            color: var(--theme-text-dark);
+            line-height: 1.6;
+        }
+
+        /* Header Styling - Updated */
+        .header {
+            background-color: var(--theme-bg-sidebar); /* Light beige */
+            color: var(--theme-primary);
+            padding: 0.8rem 2rem;
+            display: flex;
+            /* Allow wrapping on small screens */
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 2px solid var(--theme-border);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .header .logo { /* Ensure logo takes appropriate space */
+             flex-shrink: 0; /* Prevent logo from shrinking */
+        }
+
+        .header h1 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--theme-primary);
+        }
+
+        .header .logo i {
+            margin-right: 0.6rem;
+            color: var(--theme-accent);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* Allow nav items to wrap */
+            justify-content: center; /* Center items when wrapped */
+            margin-top: 0.5rem; /* Add space above nav when it wraps below logo */
+            flex-grow: 1; /* Allow nav links to take remaining space */
+            justify-content: flex-end; /* Align links to the right by default */
+        }
+
+        /* Style for text links and welcome message */
+        .nav-links a, .nav-links span {
+            color: var(--theme-primary);
+            margin: 0.3rem 0.8rem;
+            text-decoration: none;
+            transition: color 0.3s ease, transform 0.2s ease;
+            font-weight: 500;
+            position: relative;
+            padding-bottom: 4px;
+            white-space: nowrap;
+        }
+        .nav-links span { /* Style for welcome message */
+            margin-right: 0.5rem; /* Less margin */
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: var(--theme-accent);
+            transition: width 0.3s ease;
+        }
+        .nav-links a:hover {
+            color: var(--theme-accent);
+            transform: translateY(-1px);
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Style for Login/Logout Buttons */
+        .nav-links .login-button, .nav-links .logout-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            background-color: var(--theme-accent);
+            color: var(--theme-text-white);
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 0.3rem 0 0.3rem 0.8rem;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        .nav-links .login-button i, .nav-links .logout-button i {
+             margin-right: 0.5rem;
+             font-size: 0.9em;
+        }
+        .nav-links .login-button:hover, .nav-links .logout-button:hover {
+            background-color: var(--theme-accent-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            color: var(--theme-text-white);
+        }
+        .nav-links .login-button::after, .nav-links .logout-button::after {
+            display: none; /* No underline for buttons */
+        }
+        /* Specific style for logout link if needed */
+        .nav-links .logout-link {
+             color: var(--theme-accent);
+             font-weight: 500;
+             margin-left: 0.8rem;
+             cursor: pointer;
+        }
+         .nav-links .logout-link:hover {
+             color: var(--theme-accent-dark);
+             text-decoration: underline;
+         }
+
+
+        /* Hero Section Styling */
+        .hero-section {
+            background: linear-gradient(rgba(255, 251, 235, 0.6), rgba(255, 251, 235, 0.6)), url('https://media.istockphoto.com/id/1387431877/photo/female-care-worker-in-uniform-helping-senior-woman-at-home-in-bed-with-medication.jpg?s=612x612&w=0&k=20&c=IUvjINlj2q1aNU6rpufmF1Hb1jcCbG-KUAzyBE9er5U=');
+            background-size: cover;
+            background-position: center;
+            padding: 6rem 2rem;
+            text-align: center;
+            color: var(--theme-primary);
+            border-bottom: 1px solid var(--theme-border);
+            background-color: #fffbeb;
+        }
+        .hero-section h2 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            color: var(--theme-primary-dark);
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+        }
+        .hero-section p {
+            font-size: 1.15rem;
+            color: var(--theme-text-dark);
+            max-width: 700px;
+            margin: 0 auto 2.5rem auto;
+            line-height: 1.7;
+            font-weight: 500;
+             text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+        }
+        .hero-section .btn {
+            padding: 0.9rem 2.2rem;
+            font-size: 1.05rem;
+            margin-top: 1rem;
+            background-color: var(--theme-accent);
+            color: var(--theme-text-white);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            align-self: center;
+        }
+        .hero-section .btn:hover {
+             background-color: var(--theme-accent-dark);
+             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+             transform: translateY(-2px);
+        }
+
+        /* Main Content Area - Two Column Layout */
+        .main-content-wrapper {
+            padding: 2.5rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2.5rem;
+        }
+
+        /* Main content column */
+        .main-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        /* Sidebar column */
+        .sidebar-column {
+            background-color: var(--theme-bg-sidebar);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--theme-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-self: start;
+        }
+
+        /* Individual content sections */
+        .content-section {
+            background-color: var(--theme-bg-card); /* White background */
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--theme-border);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+        }
+        .sidebar-column .content-section {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            border-bottom: 1px dashed var(--theme-border-dark);
+        }
+         .sidebar-column .content-section:last-child {
+             border-bottom: none;
+         }
+
+
+        .content-section .section-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            background-color: var(--theme-bg-light);
+            margin-bottom: 1.5rem;
+            border-radius: 6px;
+            border: 1px solid var(--theme-border);
+        }
+        .content-section .section-image:error {
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             color: var(--theme-text-medium);
+             font-size: 0.9rem;
+             border-radius: 6px;
+             border: 1px solid var(--theme-border);
+        }
+        .content-section .section-image:error::after {
+            content: 'Image unavailable';
+            font-style: italic;
+        }
+
+
+        .content-section h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--theme-primary); /* Dark Brown heading */
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--theme-secondary); /* Neutral Gray/Stone underline */
+            display: inline-flex;
+            align-items: center;
+        }
+        .sidebar-column .content-section h2 {
+            font-size: 1.15rem;
+            border-bottom-width: 1px;
+        }
+
+         .content-section h2 i {
+            margin-right: 0.8rem;
+            color: var(--theme-secondary); /* Neutral Gray/Stone icon */
+            width: 20px;
+            text-align: center;
+         }
+
+        .content-section p, .content-section ul {
+            color: var(--theme-text-dark);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+        .content-section p:last-child, .content-section ul:last-child {
+            margin-bottom: 0;
+        }
+
+
+        .content-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .content-section li {
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+        }
+         .content-section li i {
+             margin-right: 0.6rem;
+             color: var(--theme-secondary); /* Neutral Gray/Stone icon */
+             width: 16px;
+             flex-shrink: 0;
+             text-align: center;
+         }
+
+        /* Notification Badge */
+        .notification-badge {
+            background-color: var(--theme-accent); /* Peach */
+            color: var(--theme-text-white); /* White text */
+            border-radius: 10px;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.7rem;
+            vertical-align: middle;
+        }
+
+        /* Footer Styling */
+        .footer {
+            background-color: #fdfbf5; /* Slightly darker beige */
+            color: var(--theme-text-medium);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--theme-border);
+        }
+
+        .footer p {
+            margin-bottom: 0.7rem;
+        }
+
+        .footer a {
+            color: var(--theme-accent); /* Peach links */
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .footer a:hover {
+            color: var(--theme-accent-dark); /* Darker Peach */
+            text-decoration: underline;
+        }
+
+        /* Responsive Adjustments for Two-Column Layout */
+        @media (max-width: 992px) { /* Stack columns on medium/tablet screens and below */
+            .main-content-wrapper {
+                grid-template-columns: 1fr; /* Single column */
+                padding: 2rem 1.5rem; /* Adjust padding */
+                gap: 2rem; /* Adjust gap */
+            }
+            .sidebar-column {
+                background-color: transparent; /* Remove distinct sidebar background */
+                padding: 0;
+                border: none;
+                box-shadow: none;
+                gap: 2rem; /* Keep gap between stacked sections */
+            }
+            /* Ensure sidebar sections get borders when stacked */
+            .sidebar-column .content-section {
+                 border-bottom: 1px solid var(--theme-border);
+            }
+             .sidebar-column .content-section:last-child {
+                 border-bottom: none;
+             }
+        }
+
+        @media (max-width: 768px) { /* Further adjustments for smaller mobile */
+             /* Header adjustments for mobile wrapping */
+             .header {
+                 align-items: center;
+             }
+             .header .logo {
+                 text-align: left;
+                 margin-bottom: 0;
+                 margin-right: auto;
+             }
+             .header h1 {
+                 font-size: 1.6rem;
+             }
+             .nav-links {
+                  margin-top: 0;
+                  justify-content: flex-end;
+                  width: auto;
+                  flex-grow: 0;
+             }
+              .nav-links a, .nav-links button {
+                  margin: 0.3rem 0 0.3rem 1rem;
+              }
+
+             .hero-section {
+                 padding: 4rem 1rem;
+                 min-height: 40vh;
+             }
+             .hero-section h2 {
+                 font-size: 1.8rem;
+             }
+             .hero-section p {
+                 font-size: 1rem;
+             }
+
+             .main-content-wrapper {
+                 padding: 2rem 1rem;
+             }
+             .content-section {
+                 padding: 1.5rem;
+             }
+              .content-section h2 {
+                  font-size: 1.2rem;
+              }
+              .content-section .section-image {
+                  height: 160px;
+              }
+        }
+
+
+         /* Button Style */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            margin-top: 1rem;
+            background-color: var(--theme-accent); /* Peach */
+            color: var(--theme-text-white); /* White text */
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            align-self: flex-start;
+        }
+        .hero-section .btn {
+            align-self: center;
+        }
+        .content-section .btn {
+             margin-top: 1.5rem;
+        }
+
+
+        .btn i {
+            margin-right: 0.6rem;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            background-color: var(--theme-accent-dark); /* Darker Peach */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+
+        /* Health Tracking Specifics */
+        .health-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.7rem;
+            padding-bottom: 0.7rem;
+            border-bottom: 1px dashed var(--theme-border);
+        }
+        .health-stat:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .health-stat span:first-child {
+            font-weight: 500;
+            color: var(--theme-text-dark);
+        }
+        .health-stat span:last-child {
+            font-weight: 600;
+            color: var(--theme-primary); /* Dark Brown values */
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        /* Meal Spec Specifics */
+        .meal-category {
+            margin-bottom: 1.2rem;
+        }
+        .meal-category h3 {
+            font-weight: 600;
+            color: var(--theme-secondary); /* Neutral Gray/Stone */
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            border-left: none;
+            padding-left: 0;
+        }
+        .meal-category ul {
+            padding-left: 0;
+            list-style: none;
+        }
+         .meal-category li {
+             margin-bottom: 0.3rem;
+             color: var(--theme-text-medium);
+             align-items: flex-start;
+             position: relative;
+             padding-left: 1.2rem;
+         }
+         .meal-category li::before {
+             content: '\f00c';
+             font-family: 'Font Awesome 6 Free';
+             font-weight: 900;
+             color: var(--theme-accent); /* Peach check icon */
+             display: inline-block;
+             position: absolute;
+             left: 0;
+             top: 5px;
+             font-size: 0.75em;
+         }
+         .meal-category li i {
+             display: none;
+         }
+
+        /* Login Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(40, 40, 42, 0.6);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #ffffff; /* White background */
+            margin: auto;
+            padding: 2.5rem;
+            border: 1px solid var(--theme-border-dark);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            position: relative;
+            color: var(--theme-text-dark);
+        }
+
+        .modal-content h2 {
+            color: var(--theme-primary); /* Dark brown title */
+            text-align: center;
+            margin-bottom: 1rem; /* Reduced margin */
+            font-size: 1.6rem;
+        }
+
+        .modal-close {
+            color: var(--theme-text-medium);
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: bold;
+            transition: color 0.3s ease;
+            line-height: 1; /* Ensure close button aligns well */
+        }
+
+        .modal-close:hover,
+        .modal-close:focus {
+            color: var(--theme-text-dark);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Form Styling */
+        .form-group {
+            margin-bottom: 1.2rem; /* Reduced margin */
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--theme-text-dark);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--theme-border-dark);
+            background-color: var(--theme-bg-light);
+            color: var(--theme-text-dark);
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="email"]:focus,
+        .form-group input[type="password"]:focus {
+            outline: none;
+            border-color: var(--theme-accent); /* Peach highlight */
+            box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2); /* Peach glow */
+        }
+
+        .modal .btn {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.9rem 1.8rem;
+            font-size: 1.1rem;
+            color: var(--theme-text-white); /* White text on button */
+        }
+
+        /* Modal view switching */
+        /* Ensure register view is hidden initially */
+        #registerView { display: none; }
+        .modal-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .modal-switch a {
+            color: var(--theme-accent);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .modal-switch a:hover {
+            color: var(--theme-accent-dark);
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">
+            <h1><i class="fas fa-hands-helping"></i>Elderly Care Connect</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="#dashboard">Dashboard</a>
+            <a href="#health">Health</a>
+            <a href="#meals">Meals</a>
+            <a href="#contact">Contact</a>
+            <a href="#resources">Resources</a>
+
+            <button id="loginBtn" class="login-button"><i class="fas fa-sign-in-alt"></i> Login</button>
+            </nav>
+    </header>
+
+    <section class="hero-section">
+        <h2>Compassionate Care for Your Loved Ones</h2>
+        <p>Providing reliable and personalized elderly care services in Nairobi. We ensure comfort, safety, and well-being for seniors in their own homes.</p>
+        <button class="btn">
+            <i class="fas fa-info-circle"></i> Learn More About Our Services
+        </button>
+    </section>
+
+    <div class="main-content-wrapper" id="dashboard">
+
+        <div class="main-column">
+            <div class="content-section" id="health">
+                 <img src="https://placehold.co/600x200/ffffff/854d0e?text=Health+Graph" alt="Abstract health graph"
+                      class="section-image"
+                      onerror="this.style.display='none'; this.onerror=null;">
+                 <h2><i class="fas fa-heart-pulse"></i>Health Tracking</h2>
+                 <div class="health-stat">
+                     <span>Blood Pressure:</span>
+                     <span>125/80 mmHg</span>
+                 </div>
+                 <div class="health-stat">
+                     <span>Blood Sugar (Fasting):</span>
+                     <span>95 mg/dL</span>
+                 </div>
+                  <div class="health-stat">
+                     <span>Heart Rate:</span>
+                     <span>72 bpm</span>
+                 </div>
+                 <p style="margin-top: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--theme-text-medium);">Last updated: Today, 8:15 AM</p>
+                 <button class="btn">
+                     <i class="fas fa-chart-line"></i>View Detailed Report
+                 </button>
+            </div>
+
+            <div class="content-section" id="meals">
+                 <img src="https://placehold.co/600x200/ffffff/a16207?text=Healthy+Meal" alt="Healthy meal ingredients"
+                      class="section-image"
+                      onerror="this.style.display='none'; this.onerror=null;">
+                 <h2><i class="fas fa-utensils"></i>Today's Meal Plan</h2>
+                 <p>Based on your health profile (e.g., Diabetes Friendly, Low Sodium).</p>
+                 <div class="meal-category">
+                     <h3>Breakfast</h3>
+                     <ul>
+                         <li>Oatmeal with berries</li>
+                         <li>Unsweetened tea</li>
+                     </ul>
+                 </div>
+                  <div class="meal-category">
+                     <h3>Lunch</h3>
+                     <ul>
+                         <li>Grilled chicken salad (light vinaigrette)</li>
+                         <li>Whole wheat bread slice</li>
+                     </ul>
+                 </div>
+                  <div class="meal-category">
+                     <h3>Dinner</h3>
+                     <ul>
+                         <li>Baked Salmon & steamed vegetables</li>
+                         <li>Small portion of brown rice</li>
+                     </ul>
+                 </div>
+                 <button class="btn">
+                     <i class="fas fa-edit"></i>Customize Plan
+                 </button>
+            </div>
+        </div>
+
+        <div class="sidebar-column">
+            <div class="content-section">
+                 <h2><i class="fas fa-tachometer-alt"></i>Welcome!</h2>
+                 <p>Here's your quick overview for today. Stay healthy and active!</p>
+            </div>
+
+            <div class="content-section">
+                <h2>
+                    <i class="fas fa-bell fa-shake" style="--fa-animation-duration: 2s;"></i> Notifications
+                    <span class="notification-badge">3</span>
+                </h2>
+                <ul>
+                    <li><i class="fas fa-calendar-check"></i> Upcoming Appointment: Dr. Smith - Tomorrow 10:00 AM</li>
+                    <li><i class="fas fa-pills"></i> Medication Reminder: Take Blood Pressure meds</li>
+                    <li><i class="fas fa-person-walking"></i> Activity Suggestion: Gentle walk recommended.</li>
+                </ul>
+                <button class="btn">
+                    <i class="fas fa-arrow-right"></i>View All Notifications
+                </button>
+            </div>
+
+            <div class="content-section" id="contact">
+                 <h2><i class="fas fa-address-book"></i>Contact Information</h2>
+                 <ul>
+                     <li><i class="fas fa-envelope"></i> Email: <a href="mailto:karinanjuguna254@gmail.com" style="color: var(--theme-accent);">karinanjuguna254@gmail.com</a></li>
+                     <li><i class="fas fa-phone"></i> Phone: <a href="tel:0706505498" style="color: var(--theme-accent);">0706505498</a></li>
+                     <li><i class="fas fa-map-marker-alt"></i> Location: Nairobi, Kenya</li>
+                 </ul>
+                  <p style="margin-top: 1rem;">Feel free to reach out for support or inquiries.</p>
+            </div>
+
+             <div class="content-section" id="resources">
+                 <h2><i class="fas fa-info-circle"></i> Helpful Resources</h2>
+                 <p>Links to health articles, emergency contacts, or community resources could go here.</p>
+                  <button class="btn">
+                     <i class="fas fa-external-link-alt"></i>Explore Resources
+                  </button>
+            </div>
+        </div>
+
+    </div> <footer class="footer">
+        <p>&copy; 2025 Elderly Care Connect. All rights reserved.</p>
+        <p>Designed with care to support our seniors in Nairobi.</p>
+        <p>
+            <a href="#dashboard">Home</a> |
+            <a href="#contact">Contact Us</a> |
+            <a href="#">Privacy Policy</a>
+        </p>
+    </footer>
+
+    <div id="authModal" class="modal"> <div class="modal-content">
+            <span class="modal-close" id="closeModalBtn">&times;</span>
+
+            <div id="loginView"> <h2>Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="login-username">Username or Email</label>
+                        <input type="text" id="login-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+                <p class="modal-switch">
+                    Don't have an account? <a id="showRegisterLink">Register here</a>
+                </p>
+            </div>
+
+            <div id="registerView" style="display: none;"> <h2>Register</h2>
+                 <form id="registerForm"> <div class="form-group">
+                         <label for="register-username">Username</label>
+                         <input type="text" id="register-username" name="username" required> </div>
+                     <div class="form-group">
+                         <label for="register-password">Password</label>
+                         <input type="password" id="register-password" name="password" required> </div>
+                     <button type="submit" class="btn">
+                         <i class="fas fa-user-plus"></i> Register
+                     </button>
+                 </form>
+                 <p class="modal-switch">
+                     Already have an account? <a id="showLoginLink">Login here</a>
+                 </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Elderly Care Website Frontend Loaded (v19 - Login Display Logic Removed)"); // Updated version log
+
+            // --- Modal View Switching Logic ---
+            const authModal = document.getElementById('authModal');
+            const loginView = document.getElementById('loginView');
+            const registerView = document.getElementById('registerView');
+            const showRegisterLink = document.getElementById('showRegisterLink');
+            const showLoginLink = document.getElementById('showLoginLink');
+
+            console.log("Checking elements:", {
+                authModal, loginView, registerView, showRegisterLink, showLoginLink
+            });
+             if (!authModal || !loginView || !registerView || !showRegisterLink || !showLoginLink) {
+                 console.error("Modal elements not found! Check HTML IDs.");
+             }
+
+
+            if (showRegisterLink) {
+                showRegisterLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log("Show Register Link clicked");
+                    if(loginView) loginView.style.display = 'none';
+                    if(registerView) registerView.style.display = 'block';
+                    console.log("Login display:", loginView.style.display);
+                    console.log("Register display:", registerView.style.display);
+                });
+            }
+
+            if (showLoginLink) {
+                showLoginLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log("Show Login Link clicked");
+                    if(registerView) registerView.style.display = 'none';
+                    if(loginView) loginView.style.display = 'block';
+                    console.log("Register display:", registerView.style.display);
+                    console.log("Login display:", loginView.style.display);
+                });
+            }
+            // --- End Modal View Switching Logic ---
+
+
+            // --- General Modal Logic ---
+            const loginBtn = document.getElementById('loginBtn'); // Button in header
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            const openModal = () => {
+                 console.log("Opening modal");
+                 if(registerView) registerView.style.display = 'none';
+                 if(loginView) loginView.style.display = 'block';
+                 if(authModal) authModal.style.display = 'flex';
+            };
+            const closeModal = () => {
+                 console.log("Closing modal");
+                 if(authModal) authModal.style.display = 'none';
+            };
+
+            // Add listener only if login button exists
+            if(loginBtn) loginBtn.addEventListener('click', openModal);
+            if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+
+            window.addEventListener('click', (event) => {
+                if (event.target === authModal) {
+                    closeModal();
+                }
+            });
+
+            // --- Login Form Submission ---
+            const loginForm = document.getElementById('loginForm');
+            if(loginForm) {
+                loginForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const usernameInput = document.getElementById('login-username');
+                    const passwordInput = document.getElementById('login-password');
+                    const formData = new FormData();
+                    formData.append('username', usernameInput.value);
+                    formData.append('password', passwordInput.value);
+
+                    console.log("Sending login data to backend...");
+                    try {
+                        const response = await fetch('/login', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        console.log("Login Backend response:", result);
+
+                        if (result.status === 'success') {
+                           // Reload the page on successful login
+                           // If sessions were fully implemented, the backend would render differently
+                           window.location.reload();
+                        } else {
+                           alert(`Login Failed: ${result.message}`);
+                        }
+                    } catch (error) {
+                        console.error('Error sending login data:', error);
+                        alert('Error connecting to the server. Please try again.');
+                    }
+                });
+            } else { console.error("Login form not found!"); }
+
+            // --- Registration Form Submission ---
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) {
+                registerForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const usernameInput = document.getElementById('register-username');
+                    const passwordInput = document.getElementById('register-password');
+
+                    const formData = new FormData();
+                    formData.append('username', usernameInput.value);
+                    formData.append('password', passwordInput.value);
+
+                    console.log("Sending registration data to backend...");
+                    try {
+                        const response = await fetch('/register', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        console.log("Register Backend response:", result);
+                        alert(`Registration Status: ${result.message}`); // Replace alert
+                        if (result.status === 'success') {
+                           if(registerView) registerView.style.display = 'none';
+                           if(loginView) loginView.style.display = 'block';
+                        }
+                    } catch (error) {
+                        console.error('Error sending registration data:', error);
+                        alert('Error connecting to the server. Please try again.');
+                    }
+                });
+            } else { console.error("Register form not found!"); }
+
+            // --- Other Button Handlers (Example) ---
+            const sectionButtons = document.querySelectorAll('.content-section .btn');
+            sectionButtons.forEach(button => {
+                if(button.type !== 'submit') {
+                    button.addEventListener('click', () => {
+                        console.log(`Section Button "${button.textContent.trim()}" clicked.`);
+                    });
+                }
+            });
+             const heroButton = document.querySelector('.hero-section .btn');
+             if(heroButton && heroButton.type !== 'submit') {
+                  heroButton.addEventListener('click', () => {
+                        console.log(`Hero Button "${heroButton.textContent.trim()}" clicked.`);
+                    });
+             }
+
+        });
+    </script>
+
+</body>
+</html>

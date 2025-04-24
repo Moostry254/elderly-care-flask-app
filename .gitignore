@@ -1,0 +1,19 @@
+# Python virtual environment
+venv/
+.venv/
+
+# SQLite Database file (use managed DB on Render)
+*.db
+*.db-journal
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE specific files (PyCharm)
+.idea/
+
+# OS specific files
+.DS_Store
+Thumbs.db
