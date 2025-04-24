@@ -54,9 +54,9 @@ class User(db.Model):
 # after deploying, rather than before every request in production.
 # You can run this once via Render's shell after the first deploy if needed.
 # Commenting out the automatic creation for now.
-with app.app_context():
-     db.create_all()
-     print("Database tables checked/created.")
+# with app.app_context():
+#     db.create_all()
+#   print("Database tables checked/created.")
 
 # --- API Endpoints / Routes ---
 # (All your routes like @app.route('/'), @app.route('/login'), etc. remain the same)
