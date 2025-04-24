@@ -3,37 +3,59 @@ import secrets
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+# Import Click for creating CLI commands (usually installed with Flask)
+import click
 
-# --- App and Database Configuration (Updated for Deployment) ---
+# --- App and Database Configuration ---
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__, template_folder='templates')
 
 # --- Database Configuration ---
-# Use Render's DATABASE_URL environment variable if available, otherwise fallback to SQLite
-# Render automatically sets DATABASE_URL for its PostgreSQL service
 database_url = os.environ.get('DATABASE_URL')
-if database_url and database_url.startswith("postgres://"):
-    # Render provides postgresql URLs, SQLAlchemy needs postgresql://
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+final_db_uri = None
 
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url or \
-                                        'sqlite:///' + os.path.join(basedir,
-                                                                    'elderly_care_dev.db')  # Use a different name for local dev DB
+if database_url:
+    print("DATABASE_URL environment variable found.")
+    if database_url.startswith("postgres://"):
+        final_db_uri = database_url.replace("postgres://", "postgresql://", 1)
+        print(f"Using Render PostgreSQL URI: {final_db_uri}")
+    else:
+        final_db_uri = database_url
+        print(f"Using DATABASE_URL directly: {final_db_uri}")
+else:
+    print("DATABASE_URL environment variable NOT found. Falling back to local SQLite.")
+    sqlite_path = os.path.join(basedir, 'local_dev.db')
+    final_db_uri = 'sqlite:///' + sqlite_path
+    print(f"Using local SQLite URI: {final_db_uri}")
 
+
+app.config['SQLALCHEMY_DATABASE_URI'] = final_db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- Secret Key Configuration ---
-# Use Render's SECRET_KEY environment variable or generate one
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(16)
-# IMPORTANT: Set the SECRET_KEY environment variable in Render's settings!
+if not os.environ.get('SECRET_KEY'):
+    print("Warning: SECRET_KEY environment variable not set. Using temporary key.")
 
 db = SQLAlchemy(app)
 
+# --- TEMPORARY CODE TO CREATE TABLES ON DEPLOY (REMOVE AFTER SUCCESS) ---
+# This block attempts to create tables when the app starts.
+# Use this only if Render Shell access is unavailable for `flask init-db`.
+with app.app_context():
+    print("TEMPORARY: Attempting db.create_all()...")
+    try:
+        db.create_all() # Create tables if they don't exist
+        print("TEMPORARY: db.create_all() finished.")
+    except Exception as e:
+        print(f"TEMPORARY: Error during db.create_all(): {e}")
+# --- END TEMPORARY CODE ---
+
 
 # --- Database Model Definition ---
-# (User class definition remains the same as before)
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -48,74 +70,122 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
-
-# --- Create Database Tables ---
-# It's generally better to run this manually or use migrations (like Flask-Migrate)
-# after deploying, rather than before every request in production.
-# You can run this once via Render's shell after the first deploy if needed.
-# Commenting out the automatic creation for now.
-# with app.app_context():
-#     db.create_all()
-#   print("Database tables checked/created.")
+# --- Database Initialization Command ---
+# This command allows you to create tables manually via `flask init-db`
+# You would normally run this once locally or via Render Shell.
+@app.cli.command('init-db')
+def init_db_command():
+    """Clear existing data and create new tables."""
+    with app.app_context(): # Ensure commands run within application context
+        print("Initializing the database...")
+        # db.drop_all() # Optional: uncomment to drop tables first
+        db.create_all()
+        print('Database initialized and tables created.')
 
 # --- API Endpoints / Routes ---
-# (All your routes like @app.route('/'), @app.route('/login'), etc. remain the same)
+
 @app.route('/')
 def home():
+    """Renders the main HTML page, passing username if logged in."""
     logged_in_username = session.get('username', None)
+    print(f"Rendering home page. Logged in user: {logged_in_username}")
     return render_template('index.html', username=logged_in_username)
-
 
 @app.route('/api/test')
 def api_test():
+    """Returns a simple JSON message to confirm the API is reachable."""
     return jsonify({"message": "API is working!"})
 
-
+# --- Registration Endpoint ---
 @app.route('/register', methods=['POST'])
 def register():
+    """Handles POST requests for user registration."""
     try:
         username = request.form.get('username')
         password = request.form.get('password')
-        if not username or not password: return jsonify(
-            {"status": "error", "message": "Username and password are required."}), 400
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user: return jsonify({"status": "error", "message": "Username already taken."}), 409
+        print(f"--- Registration Attempt ---")
+        print(f"Username: '{username}', Password Provided: {'Yes' if password else 'No'}")
+
+        if not username or not password:
+            print("Registration failed: Missing username or password.")
+            return jsonify({"status": "error", "message": "Username and password are required."}), 400
+
+        print(f"Checking if user '{username}' exists...")
+        # Ensure we query within context if using before_request wasn't reliable
+        with app.app_context():
+             existing_user = User.query.filter_by(username=username).first()
+
+        if existing_user:
+            print(f"Registration failed: User '{username}' already exists.")
+            return jsonify({"status": "error", "message": "Username already taken. Please choose another."}), 409
+
+        print(f"Creating new user object for '{username}'...")
         new_user = User(username=username)
+        print(f"Setting password for '{username}'...")
         new_user.set_password(password)
+
+        print(f"Adding user '{username}' to session...")
         db.session.add(new_user)
+        print(f"Committing session for user '{username}'...")
         db.session.commit()
-        print(f"User registered: {username}")
+
+        print(f"User registered successfully: {username}")
         return jsonify({"status": "success", "message": f"User '{username}' registered successfully!"}), 201
+
     except Exception as e:
         db.session.rollback()
-        print(f"Error during registration: {e}")
-        return jsonify({"status": "error", "message": "Internal server error."}), 500
+        print(f"!!! Critical Error during registration: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": "An internal server error occurred during registration."}), 500
 
 
+# --- Login Endpoint ---
 @app.route('/login', methods=['POST'])
 def login():
+    """Handles POST requests from the login form and sets session."""
     try:
         username = request.form.get('username')
         password = request.form.get('password')
-        if not username or not password: return jsonify(
-            {"status": "error", "message": "Missing username or password."}), 400
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
+        print(f"--- Login Attempt ---")
+        print(f"Username received: '{username}'")
+
+        if not username or not password:
+             print("Login failed: Missing username or password.")
+             return jsonify({"status": "error", "message": "Missing username or password."}), 400
+
+        print(f"Querying database for username: '{username}'")
+        # Ensure query runs within context
+        with app.app_context():
+             user = User.query.filter_by(username=username).first()
+
+        if not user:
+            print(f"Login failed: User '{username}' not found.")
+            return jsonify({"status": "error", "message": "Invalid username or password."}), 401
+
+        print(f"User found: {user}")
+        password_match = user.check_password(password)
+        print(f"Password check result: {password_match}")
+
+        if password_match:
             session['username'] = user.username
             session['user_id'] = user.id
-            print(f"Login successful for user: {username}")
-            return jsonify(
-                {"status": "success", "message": f"Login successful for {username}.", "username": user.username})
+            print(f"Login successful, session set for user: {username}")
+            return jsonify({"status": "success", "message": f"Login successful for {username}.", "username": user.username})
         else:
-            print(f"Login failed for user: {username}")
+            print(f"Login failed: Incorrect password for user '{username}'.")
             return jsonify({"status": "error", "message": "Invalid username or password."}), 401
+
     except Exception as e:
         print(f"Error during login: {e}")
-        return jsonify({"status": "error", "message": "Internal server error."}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": "An internal server error occurred during login."}), 500
 
-
+# --- Logout Endpoint ---
 @app.route('/logout')
 def logout():
+    """Clears the session to log the user out."""
     session.pop('username', None)
     session.pop('user_id', None)
     print("User logged out, session cleared.")
@@ -123,9 +193,8 @@ def logout():
 
 
 # --- Run the App (Only for local development) ---
-# Gunicorn will run the app in production via the Procfile
-# The if __name__ == '__main__': block is NOT needed for Render deployment
-# but keep it for running locally with `python app.py`
+# Gunicorn runs the app in production via Procfile
 if __name__ == '__main__':
+    # Note: The temporary create_all() call IS ABOVE, outside this block.
+    # Run 'flask init-db' manually in terminal if needed locally.
     app.run(debug=True, host='0.0.0.0', port=5000)
-
