@@ -219,7 +219,7 @@
 
         <div class="main-column">
 
-            {% if username and role == 'caregiver' %} {# Simulate showing patient list only for caregivers #}
+            {% if username and role == 'caregiver' %} {# Show patient list only for caregivers #}
             <div id="patientListSection" class="patient-list-section">
                 <h2><i class="fas fa-users"></i> Assigned Patients</h2>
                 <p id="patient-loading-message" style="display: none;">Loading patients...</p>
@@ -539,25 +539,32 @@
 
              // Fetch and display data for a specific patient (simulated)
             async function fetchAndDisplayPatientData(patientId) {
-                if (!patientId && currentUserRole === 'patient') {
-                    // If patient is logged in, fetch their own data (backend needs to handle this)
+                let targetPatientId = patientId; // Use the passed ID if available
+
+                if (!targetPatientId && currentUserRole === 'patient') {
+                    // If patient is logged in and no specific ID is passed, fetch their own data
                     console.log("Fetching data for logged-in patient...");
-                    // patientId = loggedInUserId; // Need to get this ID somehow
-                    // For simulation, just use a default if patient logs in
-                    patientId = '101'; // Simulate Alice logging in
-                } else if (!patientId) {
-                    console.log("No patient selected.");
-                     // Optionally clear or hide data sections
+                    // In a real app, you'd get the logged-in user's ID from a secure source,
+                    // but for simulation we might need to hardcode or fetch it separately.
+                    // For now, we'll use a placeholder/simulated ID for the patient view
+                    targetPatientId = '101'; // Simulate patient Alice's ID
+                } else if (!targetPatientId && currentUserRole === 'caregiver') {
+                     console.log("No patient selected by caregiver.");
+                     // Hide or clear data sections when no patient is selected
                      patientDataSections.forEach(section => section.style.display = 'none');
-                    return;
+                     return; // Stop execution if no patient is selected by caregiver
+                } else if (!targetPatientId) {
+                     console.log("No patient ID available.");
+                     return; // Stop if no ID is available
                 }
 
-                console.log(`Fetching data for patient ID: ${patientId}`);
+
+                console.log(`Fetching data for patient ID: ${targetPatientId}`);
                 updateHealthUI(null, true); updateMealsUI(null, true); updateNotificationsUI(null, true);
                 try {
-                     // ** Replace with real fetch later: const response = await fetch(`/api/patient/${patientId}/dashboard-data`); **
+                     // ** Replace with real fetch later: const response = await fetch(`/api/patient/${targetPatientId}/dashboard-data`); **
                      // Simulate getting data from backend
-                     const response = await fetch(`/api/patient/${patientId}/dashboard-data`); // Use placeholder API
+                     const response = await fetch(`/api/patient/${targetPatientId}/dashboard-data`); // Use placeholder API
                      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                      const data = await response.json();
                      updateHealthUI(data.health);
@@ -575,8 +582,16 @@
                  healthNoData.style.display = 'none'; healthStatsContainer.style.display = 'none';
                  if (isLoading) { healthStatsContainer.style.display = 'block'; healthBP.textContent = 'Loading...'; healthSugar.textContent = 'Loading...'; healthHR.textContent = 'Loading...'; healthLastUpdated.textContent = 'Loading...'; }
                  else if (isError) { healthNoData.textContent = 'Error loading health data.'; healthNoData.style.display = 'block'; }
-                 else if (healthData) { healthStatsContainer.style.display = 'block'; healthBP.textContent = healthData.bp || '--/-- mmHg'; healthSugar.textContent = healthData.sugar || '-- mg/dL'; healthHR.textContent = healthData.hr || '-- bpm'; healthLastUpdated.textContent = `Last updated: ${healthData.updated || '--'}`; }
-                 else { healthNoData.textContent = 'No health data available.'; healthNoData.style.display = 'block'; }
+                 else if (healthData && Object.keys(healthData).length > 0) { // Check if healthData is not empty
+                     healthStatsContainer.style.display = 'block';
+                     healthBP.textContent = healthData.bp || '--/-- mmHg';
+                     healthSugar.textContent = healthData.sugar || '-- mg/dL';
+                     healthHR.textContent = healthData.hr || '-- bpm';
+                     healthLastUpdated.textContent = `Last updated: ${healthData.updated || '--'}`;
+                 } else {
+                     healthNoData.textContent = 'No health data available.';
+                     healthNoData.style.display = 'block';
+                 }
             }
 
             // Update Meal Section UI
@@ -585,26 +600,32 @@
                  mealNoData.style.display = 'none'; mealPlanContainer.style.display = 'none';
                  if (isLoading) { mealPlanContainer.style.display = 'block'; mealBreakfast.innerHTML = '<li>Loading...</li>'; mealLunch.innerHTML = '<li>Loading...</li>'; mealDinner.innerHTML = '<li>Loading...</li>'; }
                  else if (isError) { mealNoData.textContent = 'Error loading meal plan.'; mealNoData.style.display = 'block'; }
-                 else if (mealData) { mealPlanContainer.style.display = 'block'; mealBreakfast.innerHTML = mealData.breakfast?.map(item => `<li>${item}</li>`).join('') || '<li>Not specified</li>'; mealLunch.innerHTML = mealData.lunch?.map(item => `<li>${item}</li>`).join('') || '<li>Not specified</li>'; mealDinner.innerHTML = mealData.dinner?.map(item => `<li>${item}</li>`).join('') || '<li>Not specified</li>'; }
-                 else { mealNoData.textContent = 'No meal plan available.'; mealNoData.style.display = 'block'; }
+                 else if (mealData && (mealData.breakfast?.length || mealData.lunch?.length || mealData.dinner?.length)) { // Check if mealData has content
+                    mealPlanContainer.style.display = 'block';
+                    mealBreakfast.innerHTML = mealData.breakfast?.map(item => `<li>${item}</li>`).join('') || '<li>Not specified</li>';
+                    mealLunch.innerHTML = mealData.lunch?.map(item => `<li>${item}</li>`).join('') || '<li>Not specified</li>';
+                    mealDinner.innerHTML = mealData.dinner?.map(item => `<li>${item}</li>`).join('') || '<li>Not specified</li>';
+                 } else {
+                     mealNoData.textContent = 'No meal plan available.';
+                     mealNoData.style.display = 'block';
+                 }
             }
 
              // Update Notifications Section UI
-            async function fetchAndUpdateNotifications() { // Make async
+            async function fetchAndUpdateNotifications() {
                  if (!notificationList || !notiNoData || !notificationCountBadge) return;
                  notiNoData.style.display = 'none'; notificationList.style.display = 'none';
                  notificationList.innerHTML = '<li>Loading notifications...</li>'; notificationCountBadge.textContent = '?';
                  notificationList.style.display = 'block';
 
                  try {
-                     // ** Replace with real fetch later: const response = await fetch('/api/notifications'); **
                      await new Promise(resolve => setTimeout(resolve, 600)); // Simulate delay
-                     const response = await fetch('/api/notifications'); // Use placeholder API
+                     const response = await fetch('/api/notifications');
                      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                      const notifications = await response.json();
 
                      if (notifications && notifications.length > 0) {
-                         notificationList.innerHTML = notifications.map(n => `<li><i class="fas ${n.type === 'medication_reminder' ? 'fa-pills' : 'fa-bell'}"></i> ${n.msg}</li>`).join(''); // Use different icons
+                         notificationList.innerHTML = notifications.map(n => `<li><i class="fas ${n.type === 'medication_reminder' ? 'fa-pills' : 'fa-bell'}"></i> ${n.msg}</li>`).join('');
                          notificationCountBadge.textContent = notifications.length;
                      } else {
                          notiNoData.textContent = 'No notifications.';
@@ -628,8 +649,7 @@
                     console.log("User is caregiver. Fetching patient list.");
                     if (patientListSection) patientListSection.style.display = 'block';
                     fetchAssignedPatients();
-                    // Hide patient data sections until one is selected
-                    patientDataSections.forEach(section => section.style.display = 'none');
+                    patientDataSections.forEach(section => section.style.display = 'none'); // Hide data until patient selected
                     if(healthPatientName) healthPatientName.textContent = "";
                     if(mealPatientName) mealPatientName.textContent = "";
                     if(notiPatientName) notiPatientName.textContent = "";
@@ -639,7 +659,6 @@
                      console.log("User is patient. Hiding patient list, showing own data.");
                      if (patientListSection) patientListSection.style.display = 'none';
                      patientDataSections.forEach(section => section.style.display = 'block');
-                     // Fetch data for the logged-in patient (simulated)
                      fetchAndDisplayPatientData(null); // Pass null to indicate self
                      fetchAndUpdateNotifications(); // Fetch patient's notifications
 
@@ -671,9 +690,13 @@
                 healthRecordForm.addEventListener('submit', async (event) => {
                     event.preventDefault();
                     const formData = new FormData(healthRecordForm);
-                    // If caregiver is logged in, add the selected patient ID
+                    // If caregiver is logged in AND a patient is selected, add patient_id
                     if (currentUserRole === 'caregiver' && currentPatientId) {
-                        formData.append('patient_id', currentPatientId); // Backend needs to handle this
+                        formData.append('patient_id', currentPatientId);
+                        console.log(`Adding patient_id ${currentPatientId} to health record form data.`);
+                    } else if (currentUserRole === 'caregiver' && !currentPatientId) {
+                        alert("Please select a patient before saving a health reading.");
+                        return; // Stop submission if caregiver hasn't selected a patient
                     }
                     const statusP = healthRecordStatus;
 
@@ -691,8 +714,8 @@
                         if (result.status === 'success') {
                             if (statusP) { statusP.textContent = `Success: ${result.message}`; statusP.style.color = 'green'; }
                             healthRecordForm.reset();
-                            // Optionally refresh just the health display section for the current patient
-                            // fetchAndDisplayPatientData(currentPatientId || null); // Re-fetch data
+                            // Refresh data for the current view
+                            fetchAndDisplayPatientData(currentPatientId); // Re-fetch data for current patient (or self if patient)
                         } else {
                              if (statusP) { statusP.textContent = `Error: ${result.message}`; statusP.style.color = 'red'; }
                         }
