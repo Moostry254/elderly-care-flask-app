@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 # Import Click for creating CLI commands (usually installed with Flask)
 import click
+import traceback # Import traceback for better error logging
 
 # --- App and Database Configuration ---
 
@@ -41,17 +42,9 @@ if not os.environ.get('SECRET_KEY'):
 
 db = SQLAlchemy(app)
 
-# --- TEMPORARY CODE TO CREATE TABLES ON DEPLOY (REMOVE AFTER SUCCESS) ---
-# This block attempts to create tables when the app starts.
-# Use this only if Render Shell access is unavailable for `flask init-db`.
-with app.app_context():
-    print("TEMPORARY: Attempting db.create_all()...")
-    try:
-        db.create_all() # Create tables if they don't exist
-        print("TEMPORARY: db.create_all() finished.")
-    except Exception as e:
-        print(f"TEMPORARY: Error during db.create_all(): {e}")
-# --- END TEMPORARY CODE ---
+# --- REMOVED TEMPORARY CODE TO CREATE TABLES ON DEPLOY ---
+# The block that called db.create_all() on startup has been removed.
+# Use the 'flask init-db' command or Render Shell for table creation/updates.
 
 
 # --- Database Model Definition ---
@@ -72,7 +65,6 @@ class User(db.Model):
 
 # --- Database Initialization Command ---
 # This command allows you to create tables manually via `flask init-db`
-# You would normally run this once locally or via Render Shell.
 @app.cli.command('init-db')
 def init_db_command():
     """Clear existing data and create new tables."""
@@ -111,7 +103,7 @@ def register():
             return jsonify({"status": "error", "message": "Username and password are required."}), 400
 
         print(f"Checking if user '{username}' exists...")
-        # Ensure we query within context if using before_request wasn't reliable
+        # Ensure we query within context
         with app.app_context():
              existing_user = User.query.filter_by(username=username).first()
 
@@ -135,8 +127,7 @@ def register():
     except Exception as e:
         db.session.rollback()
         print(f"!!! Critical Error during registration: {e}")
-        import traceback
-        traceback.print_exc()
+        traceback.print_exc() # Print detailed error traceback
         return jsonify({"status": "error", "message": "An internal server error occurred during registration."}), 500
 
 
@@ -178,8 +169,7 @@ def login():
 
     except Exception as e:
         print(f"Error during login: {e}")
-        import traceback
-        traceback.print_exc()
+        traceback.print_exc() # Print detailed error traceback
         return jsonify({"status": "error", "message": "An internal server error occurred during login."}), 500
 
 # --- Logout Endpoint ---
@@ -195,6 +185,5 @@ def logout():
 # --- Run the App (Only for local development) ---
 # Gunicorn runs the app in production via Procfile
 if __name__ == '__main__':
-    # Note: The temporary create_all() call IS ABOVE, outside this block.
     # Run 'flask init-db' manually in terminal if needed locally.
     app.run(debug=True, host='0.0.0.0', port=5000)
